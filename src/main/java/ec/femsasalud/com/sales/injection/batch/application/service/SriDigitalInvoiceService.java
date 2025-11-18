@@ -25,10 +25,10 @@ public class SriDigitalInvoiceService {
     private final DigitalInvoiceProcessorService invoiceProcessorService;
     private final ParametrosService parametrosService;
 
-    @Value("${sri.wsdl.autorizacion.url}")
+    @Value("${sri.wsdl.autorizacion.url:}")
     private String defaultWsdlUrl;
 
-    @Value("${sri.ambiente}")
+    @Value("${sri.ambiente:}")
     private String defaultAmbiente;
 
     private static final String CODIGO_PROCESADO = "201";

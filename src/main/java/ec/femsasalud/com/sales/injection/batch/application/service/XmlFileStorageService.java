@@ -21,7 +21,7 @@ public class XmlFileStorageService {
 
     private final ParametrosService parametrosService;
 
-    @Value("${sri.xml.storage.path}")
+    @Value("${sri.xml.storage.path:}")
     private String defaultXmlStoragePath;
 
     public String saveXmlFile(String xmlContent, String claveAcceso, String documentType) {
