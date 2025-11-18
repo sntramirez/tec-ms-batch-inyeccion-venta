@@ -41,33 +41,94 @@ Este microservicio consulta automáticamente el SRI (Servicio de Rentas Internas
 
 ## Configuración
 
-### Parámetros en FA_PARAMETROS_FACTURADOR
+### Configuración por Ambiente (Application Properties)
 
-Debe configurar los siguientes parámetros en la tabla `FARMACIAS.FA_PARAMETROS_FACTURADOR`:
+La configuración del SRI se maneja mediante **Spring Profiles** en archivos `application-{profile}.properties`. Esto permite tener diferentes configuraciones para desarrollo, pruebas y producción.
 
-| CLAVE | VALOR | DESCRIPCIÓN |
-|-------|-------|-------------|
-| `SRI_WSDL_URL` | `https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl` | URL del WSDL del SRI |
-| `XML_STORAGE_PATH` | `/path/to/storage` | Ruta base para almacenar XMLs |
+#### Perfiles Disponibles
 
-**Valores por defecto** (si no se configuran):
-- `SRI_WSDL_URL`: `https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl`
-- `XML_STORAGE_PATH`: `/tmp/facturas`
+El microservicio soporta los siguientes perfiles:
+- **dev**: Desarrollo (apunta a ambiente de PRUEBAS del SRI)
+- **test**: Testing/QA (apunta a ambiente de PRUEBAS del SRI)
+- **prod**: Producción (apunta a ambiente de PRODUCCIÓN del SRI)
 
-### Ejemplo de INSERT para parámetros:
+#### Parámetros de Configuración
 
-```sql
--- Configurar URL del WSDL del SRI
-INSERT INTO FARMACIAS.FA_PARAMETROS_FACTURADOR (ID, CLAVE, VALOR)
-VALUES (SEQ_FA_PARAMETROS_FACTURADOR.NEXTVAL, 'SRI_WSDL_URL',
-        'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl');
+| Parámetro | Descripción | Ejemplo |
+|-----------|-------------|---------|
+| `sri.wsdl.autorizacion.url` | URL del WSDL del SRI | `https://cel.sri.gob.ec/...` |
+| `sri.ambiente` | Ambiente SRI (1=Pruebas, 2=Producción) | `1` o `2` |
+| `sri.xml.storage.path` | Ruta base para almacenar XMLs | `/app/facturas/prod` |
 
--- Configurar ruta de almacenamiento de XMLs
-INSERT INTO FARMACIAS.FA_PARAMETROS_FACTURADOR (ID, CLAVE, VALOR)
-VALUES (SEQ_FA_PARAMETROS_FACTURADOR.NEXTVAL, 'XML_STORAGE_PATH',
-        '/var/facturas/xmls');
+#### URLs del SRI por Ambiente
 
-COMMIT;
+| Ambiente | URL WSDL | sri.ambiente |
+|----------|----------|--------------|
+| **PRUEBAS** | `https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl` | `1` |
+| **PRODUCCIÓN** | `https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl` | `2` |
+
+### Configuración por Archivo
+
+#### application.properties (Base)
+```properties
+# Profile activo - Cambiar según el ambiente
+spring.profiles.active=dev
+
+# SRI Configuration - Valores por defecto
+sri.wsdl.autorizacion.url=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+sri.ambiente=1
+sri.xml.storage.path=/tmp/facturas
+```
+
+#### application-dev.properties (Desarrollo)
+```properties
+# SRI Configuration - PRUEBAS
+sri.wsdl.autorizacion.url=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+sri.ambiente=1
+sri.xml.storage.path=/tmp/facturas/dev
+```
+
+#### application-test.properties (Testing/QA)
+```properties
+# SRI Configuration - PRUEBAS
+sri.wsdl.autorizacion.url=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+sri.ambiente=1
+sri.xml.storage.path=/app/facturas/test
+```
+
+#### application-prod.properties (Producción)
+```properties
+# SRI Configuration - PRODUCCIÓN
+sri.wsdl.autorizacion.url=https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
+sri.ambiente=2
+sri.xml.storage.path=/app/facturas/prod
+```
+
+### Activar un Perfil
+
+Hay varias formas de activar un perfil:
+
+1. **En application.properties**:
+```properties
+spring.profiles.active=prod
+```
+
+2. **Como argumento JVM**:
+```bash
+java -jar -Dspring.profiles.active=prod tec-ms-batch-inyeccion-venta-0.0.1.jar
+```
+
+3. **Como variable de entorno**:
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+java -jar tec-ms-batch-inyeccion-venta-0.0.1.jar
+```
+
+4. **En Docker/Kubernetes**:
+```yaml
+env:
+  - name: SPRING_PROFILES_ACTIVE
+    value: "prod"
 ```
 
 ### Configuración del Scheduler
@@ -204,9 +265,15 @@ Ejecuta el job automáticamente según el cron configurado.
 ## Consideraciones
 
 1. **Conexión Internet**: El servicio requiere acceso a Internet para consultar el SRI
-2. **Permisos de Escritura**: Asegurar permisos en el directorio configurado en `XML_STORAGE_PATH`
-3. **Reintentos**: Los registros con error (CODIGO=500) no se reprocesarán automáticamente
-4. **Duplicados**: El servicio verifica por `CLAVE_ACCESO` antes de insertar
+2. **Permisos de Escritura**: Asegurar permisos en el directorio configurado en `sri.xml.storage.path`
+3. **Ambiente Correcto**: Verificar que el perfil activo corresponda al ambiente deseado
+   - Dev/Test deben usar ambiente PRUEBAS del SRI (`sri.ambiente=1`)
+   - Producción debe usar ambiente PRODUCCIÓN del SRI (`sri.ambiente=2`)
+4. **Reintentos**: Los registros con error (CODIGO=500) no se reprocesarán automáticamente
+5. **Duplicados**: El servicio verifica por `CLAVE_ACCESO` antes de insertar
+6. **URLs del SRI**: Las URLs de PRUEBAS y PRODUCCIÓN son diferentes:
+   - PRUEBAS: `https://celcer.sri.gob.ec/...`
+   - PRODUCCIÓN: `https://cel.sri.gob.ec/...`
 
 ## Troubleshooting
 
@@ -220,8 +287,10 @@ Ejecuta el job automáticamente según el cron configurado.
 
 ### Error al consultar SRI
 - Verificar conectividad a Internet
-- Verificar URL del WSDL en parámetros
+- Verificar URL del WSDL en application.properties (según el perfil activo)
+- Verificar que el perfil activo sea el correcto (dev, test, prod)
 - Revisar si el SRI está disponible
+- Verificar que la URL corresponda al ambiente correcto (PRUEBAS vs PRODUCCIÓN)
 
 ### Registros no se procesan
 - Verificar que `CODIGO = '200'`

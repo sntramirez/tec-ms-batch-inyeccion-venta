@@ -1,9 +1,7 @@
 package ec.femsasalud.com.sales.injection.batch.application.service;
 
-import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.entity.FaParametrosFacturadorEntity;
-import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.repository.FaParametrosFacturadorJpaRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -16,19 +14,16 @@ import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class XmlFileStorageService {
 
-    private final FaParametrosFacturadorJpaRepository parametrosRepository;
-
-    private static final String PARAM_XML_PATH = "XML_STORAGE_PATH";
-    private static final String DEFAULT_PATH = "/tmp/facturas";
+    @Value("${sri.xml.storage.path}")
+    private String xmlStoragePath;
 
     public String saveXmlFile(String xmlContent, String claveAcceso, String documentType) {
         try {
-            String basePath = getXmlStoragePath();
+            log.debug("Usando path de almacenamiento: {}", xmlStoragePath);
             String fileName = generateFileName(claveAcceso, documentType);
-            Path fullPath = createDirectoryStructure(basePath, documentType);
+            Path fullPath = createDirectoryStructure(xmlStoragePath, documentType);
             Path filePath = fullPath.resolve(fileName);
 
             Files.write(filePath, xmlContent.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -40,21 +35,6 @@ public class XmlFileStorageService {
             log.error("Error al guardar archivo XML para clave de acceso: {}", claveAcceso, e);
             throw new RuntimeException("Error al guardar archivo XML", e);
         }
-    }
-
-    private String getXmlStoragePath() {
-        try {
-            FaParametrosFacturadorEntity parametro = parametrosRepository.findByClave(PARAM_XML_PATH);
-            if (parametro != null && parametro.getValor() != null && !parametro.getValor().isEmpty()) {
-                log.debug("Path de almacenamiento obtenido de parámetros: {}", parametro.getValor());
-                return parametro.getValor();
-            }
-        } catch (Exception e) {
-            log.warn("Error al obtener parámetro de path, usando valor por defecto", e);
-        }
-
-        log.info("Usando path por defecto: {}", DEFAULT_PATH);
-        return DEFAULT_PATH;
     }
 
     private Path createDirectoryStructure(String basePath, String documentType) throws IOException {
@@ -82,8 +62,7 @@ public class XmlFileStorageService {
 
     public Path getFilePath(String claveAcceso, String documentType) {
         try {
-            String basePath = getXmlStoragePath();
-            Path directoryPath = createDirectoryStructure(basePath, documentType);
+            Path directoryPath = createDirectoryStructure(xmlStoragePath, documentType);
             String fileName = generateFileName(claveAcceso, documentType);
             return directoryPath.resolve(fileName);
         } catch (IOException e) {
