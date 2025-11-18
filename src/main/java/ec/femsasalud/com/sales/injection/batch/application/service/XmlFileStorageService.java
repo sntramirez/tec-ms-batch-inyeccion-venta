@@ -1,5 +1,7 @@
 package ec.femsasalud.com.sales.injection.batch.application.service;
 
+import ec.femsasalud.com.sales.injection.batch.shared.common.ParametroKey;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -14,13 +16,19 @@ import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class XmlFileStorageService {
 
+    private final ParametrosService parametrosService;
+
     @Value("${sri.xml.storage.path}")
-    private String xmlStoragePath;
+    private String defaultXmlStoragePath;
 
     public String saveXmlFile(String xmlContent, String claveAcceso, String documentType) {
         try {
+            // Obtener path de almacenamiento (primero de BD, si no existe usa valor de properties)
+            String xmlStoragePath = parametrosService.getParametroOrDefault(ParametroKey.SRI_XML_STORAGE_PATH, defaultXmlStoragePath);
+
             log.debug("Usando path de almacenamiento: {}", xmlStoragePath);
             String fileName = generateFileName(claveAcceso, documentType);
             Path fullPath = createDirectoryStructure(xmlStoragePath, documentType);
@@ -62,6 +70,9 @@ public class XmlFileStorageService {
 
     public Path getFilePath(String claveAcceso, String documentType) {
         try {
+            // Obtener path de almacenamiento (primero de BD, si no existe usa valor de properties)
+            String xmlStoragePath = parametrosService.getParametroOrDefault(ParametroKey.SRI_XML_STORAGE_PATH, defaultXmlStoragePath);
+
             Path directoryPath = createDirectoryStructure(xmlStoragePath, documentType);
             String fileName = generateFileName(claveAcceso, documentType);
             return directoryPath.resolve(fileName);

@@ -4,6 +4,7 @@ import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.dto.sri.RespuestaAutorizacion;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.entity.FaColaFacturaDigitalEntity;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.repository.FaColaFacturaDigitalJpaRepository;
+import ec.femsasalud.com.sales.injection.batch.shared.common.ParametroKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,12 +23,13 @@ public class SriDigitalInvoiceService {
     private final SriAutorizacionClient sriClient;
     private final XmlFileStorageService fileStorageService;
     private final DigitalInvoiceProcessorService invoiceProcessorService;
+    private final ParametrosService parametrosService;
 
     @Value("${sri.wsdl.autorizacion.url}")
-    private String wsdlUrl;
+    private String defaultWsdlUrl;
 
     @Value("${sri.ambiente}")
-    private String ambiente;
+    private String defaultAmbiente;
 
     private static final String CODIGO_PROCESADO = "201";
     private static final String CODIGO_ERROR = "500";
@@ -35,6 +37,11 @@ public class SriDigitalInvoiceService {
     @Transactional
     public void processPendingInvoices() {
         log.info("Iniciando procesamiento de facturas digitales pendientes");
+
+        // Obtener parámetros del SRI (primero de BD, si no existe usa valor de properties)
+        String wsdlUrl = parametrosService.getParametroOrDefault(ParametroKey.SRI_WSDL_AUTORIZACION_URL, defaultWsdlUrl);
+        String ambiente = parametrosService.getParametroOrDefault(ParametroKey.SRI_AMBIENTE, defaultAmbiente);
+
         log.info("Usando WSDL: {} - Ambiente: {}", wsdlUrl, ambiente);
 
         try {
@@ -47,7 +54,7 @@ public class SriDigitalInvoiceService {
 
             for (FaColaFacturaDigitalEntity colaFactura : pendingInvoices) {
                 try {
-                    processInvoice(colaFactura);
+                    processInvoice(colaFactura, wsdlUrl);
                     successful++;
                 } catch (Exception e) {
                     log.error("Error al procesar factura con clave de acceso: {}", colaFactura.getClaveAcceso(), e);
@@ -65,7 +72,7 @@ public class SriDigitalInvoiceService {
     }
 
     @Transactional
-    public void processInvoice(FaColaFacturaDigitalEntity colaFactura) {
+    public void processInvoice(FaColaFacturaDigitalEntity colaFactura, String wsdlUrl) {
         log.info("Procesando factura con clave de acceso: {}", colaFactura.getClaveAcceso());
 
         try {

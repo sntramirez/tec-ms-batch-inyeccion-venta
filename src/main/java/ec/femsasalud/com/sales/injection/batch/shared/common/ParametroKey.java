@@ -27,7 +27,12 @@ public enum ParametroKey {
     SERVICE_USER_LOGIN("service_user_login"),
     SERVICE_USER_LOGIN_USERNAME("service_user_login_username"),
     USER_WEB("user_web"),
-    SERVICE_USER_LOGIN_PASSWORD("service_user_login_password");
+    SERVICE_USER_LOGIN_PASSWORD("service_user_login_password"),
+
+    // Parámetros SRI
+    SRI_WSDL_AUTORIZACION_URL("sri_wsdl_autorizacion_url"),
+    SRI_AMBIENTE("sri_ambiente"),
+    SRI_XML_STORAGE_PATH("sri_xml_storage_path");
 
     private final String clave;
 
