@@ -77,7 +77,7 @@ spring.profiles.active=dev
 # SRI Configuration - Valores por defecto
 sri.wsdl.autorizacion.url=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
 sri.ambiente=1
-sri.xml.storage.path=/tmp/facturas
+sri.xml.storage.path=/factelectro/documentos2015/factelectro/documentos2015/factura/autorizado
 ```
 
 #### application-dev.properties (Desarrollo)
@@ -85,7 +85,7 @@ sri.xml.storage.path=/tmp/facturas
 # SRI Configuration - PRUEBAS
 sri.wsdl.autorizacion.url=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
 sri.ambiente=1
-sri.xml.storage.path=/tmp/facturas/dev
+sri.xml.storage.path=/factelectro/documentos2015/factelectro/documentos2015/factura/autorizado
 ```
 
 #### application-test.properties (Testing/QA)
@@ -93,7 +93,7 @@ sri.xml.storage.path=/tmp/facturas/dev
 # SRI Configuration - PRUEBAS
 sri.wsdl.autorizacion.url=https://celcer.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
 sri.ambiente=1
-sri.xml.storage.path=/app/facturas/test
+sri.xml.storage.path=/factelectro/documentos2015/factelectro/documentos2015/factura/autorizado
 ```
 
 #### application-prod.properties (Producción)
@@ -101,7 +101,7 @@ sri.xml.storage.path=/app/facturas/test
 # SRI Configuration - PRODUCCIÓN
 sri.wsdl.autorizacion.url=https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl
 sri.ambiente=2
-sri.xml.storage.path=/app/facturas/prod
+sri.xml.storage.path=/factelectro/documentos2015/factelectro/documentos2015/factura/autorizado
 ```
 
 ### Activar un Perfil
@@ -211,8 +211,12 @@ En caso de error:
 
 ## Estructura de Directorios XML
 
+La ruta base configurada es: `/factelectro/documentos2015/factelectro/documentos2015/factura/autorizado`
+
+El servicio crea automáticamente subdirectorios por año, mes y tipo de documento:
+
 ```
-{XML_STORAGE_PATH}/
+/factelectro/documentos2015/factelectro/documentos2015/factura/autorizado/
 ├── 2025/
 │   ├── 01/
 │   │   ├── facturas/
@@ -224,6 +228,8 @@ En caso de error:
 │       ├── facturas/
 │       └── notas_credito/
 ```
+
+**Nota**: La estructura `{año}/{mes}/{tipo_documento}/` se crea automáticamente bajo la ruta base configurada.
 
 ## Códigos de Estado en FA_COLA_FACTURA_DIGITAL
 
