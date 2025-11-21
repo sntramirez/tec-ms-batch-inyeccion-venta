@@ -113,15 +113,15 @@ public class ProcessDigitalInvoiceUseCase {
                 throw new RuntimeException("Comprobante no autorizado. Estado: " + autorizacion.getEstado() + ". " + mensaje);
             }
 
-            // 3. Obtener XML autorizado (Puerto)
-            String xmlAutorizado = sriAuthorizationPort.obtenerXmlAutorizado(respuesta);
-            if (xmlAutorizado == null || xmlAutorizado.isEmpty()) {
-                throw new RuntimeException("No se pudo obtener el XML autorizado");
+            // 3. Obtener XML completo del SRI (no solo el comprobante)
+            String xmlCompleto = respuesta.getXmlCompleto();
+            if (xmlCompleto == null || xmlCompleto.isEmpty()) {
+                throw new RuntimeException("No se pudo obtener el XML completo del SRI");
             }
 
-            // 4. Guardar XML en filesystem (Puerto)
+            // 4. Guardar XML completo en filesystem (Puerto)
             String xmlFilePath = fileStoragePort.saveXmlFile(
-                    xmlAutorizado,
+                    xmlCompleto,
                     colaFactura.getClaveAcceso(),
                     colaFactura.getDocumentType()
             );

@@ -1,5 +1,6 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.dto.sri;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,10 @@ public class RespuestaAutorizacion {
 
     @JacksonXmlProperty(localName = "autorizaciones")
     private Autorizaciones autorizaciones;
+
+    // Campo transient para almacenar el XML completo del SRI
+    @JsonIgnore
+    private transient String xmlCompleto;
 
     @Data
     @AllArgsConstructor

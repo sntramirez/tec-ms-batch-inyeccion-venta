@@ -55,6 +55,8 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             RespuestaAutorizacion respuesta;
             try {
                 respuesta = xmlMapper.readValue(xmlResponse, RespuestaAutorizacion.class);
+                // Guardar el XML completo del SRI en el DTO
+                respuesta.setXmlCompleto(xmlResponse);
             } catch (com.fasterxml.jackson.databind.JsonMappingException jme) {
                 log.error("Error al parsear XML. XML recibido: {}", xmlResponse);
                 log.error("Error de mapeo JSON/XML: {}", jme.getMessage(), jme);
