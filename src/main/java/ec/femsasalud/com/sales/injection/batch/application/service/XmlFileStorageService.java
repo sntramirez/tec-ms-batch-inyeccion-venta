@@ -29,6 +29,13 @@ public class XmlFileStorageService {
             // Obtener path de almacenamiento (primero de BD, si no existe usa valor de properties)
             String xmlStoragePath = parametrosService.getParametroOrDefault(ParametroKey.SRI_XML_STORAGE_PATH, defaultXmlStoragePath);
 
+            // Validar que el path esté configurado
+            if (xmlStoragePath == null || xmlStoragePath.trim().isEmpty()) {
+                log.error("Path de almacenamiento de XMLs no configurado");
+                throw new IllegalStateException(
+                    "El path de almacenamiento de XMLs debe estar configurado en FA_PARAMETROS_FACTURADOR (parámetro: sri_xml_storage_path)");
+            }
+
             log.debug("Usando path de almacenamiento: {}", xmlStoragePath);
             String fileName = generateFileName(claveAcceso, documentType);
             Path fullPath = createDirectoryStructure(xmlStoragePath, documentType);
@@ -72,6 +79,13 @@ public class XmlFileStorageService {
         try {
             // Obtener path de almacenamiento (primero de BD, si no existe usa valor de properties)
             String xmlStoragePath = parametrosService.getParametroOrDefault(ParametroKey.SRI_XML_STORAGE_PATH, defaultXmlStoragePath);
+
+            // Validar que el path esté configurado
+            if (xmlStoragePath == null || xmlStoragePath.trim().isEmpty()) {
+                log.error("Path de almacenamiento de XMLs no configurado");
+                throw new IllegalStateException(
+                    "El path de almacenamiento de XMLs debe estar configurado en FA_PARAMETROS_FACTURADOR (parámetro: sri_xml_storage_path)");
+            }
 
             Path directoryPath = createDirectoryStructure(xmlStoragePath, documentType);
             String fileName = generateFileName(claveAcceso, documentType);

@@ -42,6 +42,12 @@ public class SriDigitalInvoiceService {
         String wsdlUrl = parametrosService.getParametroOrDefault(ParametroKey.SRI_WSDL_AUTORIZACION_URL, defaultWsdlUrl);
         String ambiente = parametrosService.getParametroOrDefault(ParametroKey.SRI_AMBIENTE, defaultAmbiente);
 
+        // Validar que los parámetros obligatorios estén configurados
+        validateRequiredParameter(wsdlUrl, "sri_wsdl_autorizacion_url",
+            "La URL del WSDL del SRI debe estar configurada en FA_PARAMETROS_FACTURADOR");
+        validateRequiredParameter(ambiente, "sri_ambiente",
+            "El ambiente del SRI debe estar configurado en FA_PARAMETROS_FACTURADOR");
+
         log.info("Usando WSDL: {} - Ambiente: {}", wsdlUrl, ambiente);
 
         try {
@@ -147,5 +153,12 @@ public class SriDigitalInvoiceService {
             sb.append(mensaje.getMensaje()).append(". ");
         }
         return sb.toString();
+    }
+
+    private void validateRequiredParameter(String value, String parameterName, String errorMessage) {
+        if (value == null || value.trim().isEmpty()) {
+            log.error("Parámetro requerido no configurado: {}", parameterName);
+            throw new IllegalStateException(errorMessage + " (parámetro: " + parameterName + ")");
+        }
     }
 }
