@@ -6,6 +6,7 @@ import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.HtmlUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -114,11 +115,13 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             String extracted = soapResponse.substring(startIndex, endIndex);
             // Limpiar namespaces si existen
             extracted = extracted.replaceAll("<[a-zA-Z0-9]+:", "<").replaceAll("</[a-zA-Z0-9]+:", "</");
+            // Decodificar HTML entities (&lt; -> <, &gt; -> >, etc.)
+            extracted = HtmlUtils.htmlUnescape(extracted);
             return extracted;
         }
 
         log.warn("No se pudo extraer el XML de la respuesta SOAP");
-        return soapResponse;
+        return HtmlUtils.htmlUnescape(soapResponse);
     }
 
     public String obtenerXmlAutorizado(RespuestaAutorizacion respuesta) {
