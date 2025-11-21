@@ -30,6 +30,7 @@ public class RespuestaAutorizacion {
     @NoArgsConstructor
     public static class Autorizaciones {
         @JacksonXmlProperty(localName = "autorizacion")
+        @com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper(useWrapping = false)
         private List<Autorizacion> autorizacion;
     }
 
@@ -61,6 +62,7 @@ public class RespuestaAutorizacion {
     @NoArgsConstructor
     public static class Mensajes {
         @JacksonXmlProperty(localName = "mensaje")
+        @com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper(useWrapping = false)
         private List<Mensaje> mensaje;
     }
 

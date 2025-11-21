@@ -22,6 +22,10 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
                 .build();
         this.xmlMapper = new XmlMapper();
+        // Configurar el mapper para ser más flexible
+        this.xmlMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.xmlMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        this.xmlMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS, true);
     }
 
     public RespuestaAutorizacion consultarAutorizacion(String wsdlUrl, String claveAcceso) {
@@ -45,8 +49,17 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             // Extraer el XML de la respuesta SOAP
             String xmlResponse = extractXmlFromSoapResponse(response);
 
+            log.debug("XML extraído del SOAP: {}", xmlResponse);
+
             // Parsear la respuesta XML
-            RespuestaAutorizacion respuesta = xmlMapper.readValue(xmlResponse, RespuestaAutorizacion.class);
+            RespuestaAutorizacion respuesta;
+            try {
+                respuesta = xmlMapper.readValue(xmlResponse, RespuestaAutorizacion.class);
+            } catch (com.fasterxml.jackson.databind.JsonMappingException jme) {
+                log.error("Error al parsear XML. XML recibido: {}", xmlResponse);
+                log.error("Error de mapeo JSON/XML: {}", jme.getMessage(), jme);
+                throw new RuntimeException("Error al parsear XML de respuesta del SRI: " + jme.getMessage(), jme);
+            }
 
             log.info("Autorización consultada exitosamente. Estado: {}",
                     respuesta.getAutorizaciones() != null &&
