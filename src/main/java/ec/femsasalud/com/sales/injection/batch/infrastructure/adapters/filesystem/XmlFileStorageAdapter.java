@@ -40,8 +40,12 @@ public class XmlFileStorageAdapter implements FileStoragePort {
             }
 
             log.debug("Usando path de almacenamiento: {}", xmlStoragePath);
-            String fileName = generateFileName(claveAcceso, documentType);
-            Path fullPath = createDirectoryStructure(xmlStoragePath, documentType);
+
+            // Crear estructura basePath/año/ddMMyyyy/ usando la clave de acceso
+            Path fullPath = createDirectoryStructure(xmlStoragePath, claveAcceso);
+
+            // Nombre de archivo: claveAcceso.xml (sin prefijo)
+            String fileName = claveAcceso + ".xml";
             Path filePath = fullPath.resolve(fileName);
 
             Files.write(filePath, xmlContent.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -55,15 +59,19 @@ public class XmlFileStorageAdapter implements FileStoragePort {
         }
     }
 
-    private Path createDirectoryStructure(String basePath, String documentType) throws IOException {
-        // Crear estructura: basePath/año/mes/tipo_documento
-        LocalDate now = LocalDate.now();
-        String year = now.format(DateTimeFormatter.ofPattern("yyyy"));
-        String month = now.format(DateTimeFormatter.ofPattern("MM"));
+    private Path createDirectoryStructure(String basePath, String claveAcceso) throws IOException {
+        // La clave de acceso tiene formato: ddMMyyyy... (los primeros 8 caracteres son la fecha)
+        // Ejemplo: 05112025... -> día=05, mes=11, año=2025
+        if (claveAcceso == null || claveAcceso.length() < 8) {
+            throw new IllegalArgumentException("Clave de acceso inválida, debe tener al menos 8 caracteres");
+        }
 
-        String docTypeFolder = "CREDIT_NOTE_BILL".equalsIgnoreCase(documentType) ? "notas_credito" : "facturas";
+        // Extraer fecha de la clave de acceso (ddMMyyyy)
+        String fechaStr = claveAcceso.substring(0, 8); // ddMMyyyy
+        String year = claveAcceso.substring(4, 8); // yyyy
 
-        Path fullPath = Paths.get(basePath, year, month, docTypeFolder);
+        // Crear estructura: basePath/año/ddMMyyyy
+        Path fullPath = Paths.get(basePath, year, fechaStr);
 
         if (!Files.exists(fullPath)) {
             Files.createDirectories(fullPath);
@@ -71,10 +79,5 @@ public class XmlFileStorageAdapter implements FileStoragePort {
         }
 
         return fullPath;
-    }
-
-    private String generateFileName(String claveAcceso, String documentType) {
-        String prefix = "CREDIT_NOTE_BILL".equalsIgnoreCase(documentType) ? "NC_" : "FAC_";
-        return prefix + claveAcceso + ".xml";
     }
 }
