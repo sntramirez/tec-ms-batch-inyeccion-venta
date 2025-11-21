@@ -6,6 +6,7 @@ import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.HtmlUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -55,8 +56,8 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             RespuestaAutorizacion respuesta;
             try {
                 respuesta = xmlMapper.readValue(xmlResponse, RespuestaAutorizacion.class);
-                // Guardar el XML completo del SRI exactamente como viene (sin decodificar)
-                respuesta.setXmlCompleto(xmlResponse);
+                // Guardar el XML completo del SRI decodificando HTML entities pero manteniendo CDATA
+                respuesta.setXmlCompleto(HtmlUtils.htmlUnescape(xmlResponse));
             } catch (com.fasterxml.jackson.databind.JsonMappingException jme) {
                 log.error("Error al parsear XML. XML recibido: {}", xmlResponse);
                 log.error("Error de mapeo JSON/XML: {}", jme.getMessage(), jme);
