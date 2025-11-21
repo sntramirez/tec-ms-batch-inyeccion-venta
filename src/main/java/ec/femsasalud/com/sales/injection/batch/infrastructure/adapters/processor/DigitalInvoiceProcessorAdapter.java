@@ -146,6 +146,7 @@ public class DigitalInvoiceProcessorAdapter implements DigitalInvoiceProcessorPo
                 .estado("AUTORIZADO")
                 .archivo(xmlFilePath)
                 .tipoAmbiente(autorizacion.getAmbiente())
+                .tarea("AUT")
                 .build();
 
         // Extraer datos del XML
@@ -163,6 +164,7 @@ public class DigitalInvoiceProcessorAdapter implements DigitalInvoiceProcessorPo
         notaCredito.setEstado("AUTORIZADO");
         notaCredito.setArchivo(xmlFilePath);
         notaCredito.setTipoAmbiente(autorizacion.getAmbiente());
+        notaCredito.setTarea("AUT");
 
         Document doc = parseXml(autorizacion.getComprobante());
         Element root = doc.getDocumentElement();
