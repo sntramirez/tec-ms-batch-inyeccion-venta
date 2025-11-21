@@ -56,8 +56,8 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             RespuestaAutorizacion respuesta;
             try {
                 respuesta = xmlMapper.readValue(xmlResponse, RespuestaAutorizacion.class);
-                // Guardar el XML completo del SRI en el DTO
-                respuesta.setXmlCompleto(xmlResponse);
+                // Guardar el XML completo del SRI en el DTO, decodificando HTML entities
+                respuesta.setXmlCompleto(HtmlUtils.htmlUnescape(xmlResponse));
             } catch (com.fasterxml.jackson.databind.JsonMappingException jme) {
                 log.error("Error al parsear XML. XML recibido: {}", xmlResponse);
                 log.error("Error de mapeo JSON/XML: {}", jme.getMessage(), jme);
@@ -115,13 +115,11 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             String extracted = soapResponse.substring(startIndex, endIndex);
             // Limpiar namespaces si existen
             extracted = extracted.replaceAll("<[a-zA-Z0-9]+:", "<").replaceAll("</[a-zA-Z0-9]+:", "</");
-            // Decodificar HTML entities (&lt; -> <, &gt; -> >, etc.)
-            extracted = HtmlUtils.htmlUnescape(extracted);
             return extracted;
         }
 
         log.warn("No se pudo extraer el XML de la respuesta SOAP");
-        return HtmlUtils.htmlUnescape(soapResponse);
+        return soapResponse;
     }
 
     public String obtenerXmlAutorizado(RespuestaAutorizacion respuesta) {

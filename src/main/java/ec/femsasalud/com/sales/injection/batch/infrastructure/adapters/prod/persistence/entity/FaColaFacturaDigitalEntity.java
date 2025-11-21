@@ -17,6 +17,7 @@ import java.util.Date;
 @Builder
 @Entity
 @Table(name="FA_COLA_FACTURA_DIGITAL",schema="FARMACIAS")
+@org.hibernate.annotations.DynamicUpdate
 public class FaColaFacturaDigitalEntity implements Serializable {
 
 	private static final long serialVersionUID = 1L;
