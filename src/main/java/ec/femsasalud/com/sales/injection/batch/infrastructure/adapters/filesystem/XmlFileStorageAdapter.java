@@ -41,7 +41,7 @@ public class XmlFileStorageAdapter implements FileStoragePort {
 
             log.debug("Usando path de almacenamiento: {}", xmlStoragePath);
 
-            // Crear estructura basePath/año/ddMMyyyy/ usando la clave de acceso
+            // Crear estructura basePath/ddMMyyyy/ usando la clave de acceso
             Path fullPath = createDirectoryStructure(xmlStoragePath, claveAcceso);
 
             // Nombre de archivo: claveAcceso.xml (sin prefijo)
@@ -68,10 +68,9 @@ public class XmlFileStorageAdapter implements FileStoragePort {
 
         // Extraer fecha de la clave de acceso (ddMMyyyy)
         String fechaStr = claveAcceso.substring(0, 8); // ddMMyyyy
-        String year = claveAcceso.substring(4, 8); // yyyy
 
-        // Crear estructura: basePath/año/ddMMyyyy
-        Path fullPath = Paths.get(basePath, year, fechaStr);
+        // Crear estructura: basePath/ddMMyyyy
+        Path fullPath = Paths.get(basePath, fechaStr);
 
         if (!Files.exists(fullPath)) {
             Files.createDirectories(fullPath);
