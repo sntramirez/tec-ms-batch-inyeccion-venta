@@ -1,12 +1,12 @@
 package ec.femsasalud.com.sales.injection.batch.application.usecase;
 
 import ec.femsasalud.com.sales.injection.batch.application.service.ParametrosService;
+import ec.femsasalud.com.sales.injection.batch.domain.repository.ColaFacturaDigitalRepository;
 import ec.femsasalud.com.sales.injection.batch.domain.service.DigitalInvoiceProcessorPort;
 import ec.femsasalud.com.sales.injection.batch.domain.service.FileStoragePort;
 import ec.femsasalud.com.sales.injection.batch.domain.service.SriAuthorizationPort;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.dto.sri.RespuestaAutorizacion;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.entity.FaColaFacturaDigitalEntity;
-import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.repository.FaColaFacturaDigitalJpaRepository;
 import ec.femsasalud.com.sales.injection.batch.shared.common.ParametroKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +25,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProcessDigitalInvoiceUseCase {
 
-    // Puertos
+    // Puertos - Domain Services
     private final SriAuthorizationPort sriAuthorizationPort;
     private final FileStoragePort fileStoragePort;
     private final DigitalInvoiceProcessorPort invoiceProcessorPort;
 
-    // Repositorios
-    private final FaColaFacturaDigitalJpaRepository colaFacturaRepository;
+    // Puertos - Domain Repositories
+    private final ColaFacturaDigitalRepository colaFacturaRepository;
     private final ParametrosService parametrosService;
 
     @Value("${sri.wsdl.autorizacion.url:}")
