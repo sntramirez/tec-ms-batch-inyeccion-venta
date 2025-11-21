@@ -1,5 +1,6 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.scheduler;
 
+import ec.femsasalud.com.sales.injection.batch.application.usecase.ProcessDigitalInvoiceUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -18,6 +19,7 @@ public class SriDigitalInvoiceScheduler {
 
     private final JobLauncher jobLauncher;
     private final Job sriDigitalInvoiceJob;
+    private final ProcessDigitalInvoiceUseCase processDigitalInvoiceUseCase;
 
     /**
      * Ejecuta el job cada 30 minutos

@@ -1,10 +1,12 @@
-package ec.femsasalud.com.sales.injection.batch.application.service;
+package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.filesystem;
 
+import ec.femsasalud.com.sales.injection.batch.application.service.ParametrosService;
+import ec.femsasalud.com.sales.injection.batch.domain.service.FileStoragePort;
 import ec.femsasalud.com.sales.injection.batch.shared.common.ParametroKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,15 +17,16 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
-public class XmlFileStorageService {
+public class XmlFileStorageAdapter implements FileStoragePort {
 
     private final ParametrosService parametrosService;
 
     @Value("${sri.xml.storage.path:}")
     private String defaultXmlStoragePath;
 
+    @Override
     public String saveXmlFile(String xmlContent, String claveAcceso, String documentType) {
         try {
             // Obtener path de almacenamiento (primero de BD, si no existe usa valor de properties)
@@ -73,26 +76,5 @@ public class XmlFileStorageService {
     private String generateFileName(String claveAcceso, String documentType) {
         String prefix = "CREDIT_NOTE_BILL".equalsIgnoreCase(documentType) ? "NC_" : "FAC_";
         return prefix + claveAcceso + ".xml";
-    }
-
-    public Path getFilePath(String claveAcceso, String documentType) {
-        try {
-            // Obtener path de almacenamiento (primero de BD, si no existe usa valor de properties)
-            String xmlStoragePath = parametrosService.getParametroOrDefault(ParametroKey.SRI_XML_STORAGE_PATH, defaultXmlStoragePath);
-
-            // Validar que el path esté configurado
-            if (xmlStoragePath == null || xmlStoragePath.trim().isEmpty()) {
-                log.error("Path de almacenamiento de XMLs no configurado");
-                throw new IllegalStateException(
-                    "El path de almacenamiento de XMLs debe estar configurado en FA_PARAMETROS_FACTURADOR (parámetro: sri_xml_storage_path)");
-            }
-
-            Path directoryPath = createDirectoryStructure(xmlStoragePath, documentType);
-            String fileName = generateFileName(claveAcceso, documentType);
-            return directoryPath.resolve(fileName);
-        } catch (IOException e) {
-            log.error("Error al obtener path del archivo", e);
-            return null;
-        }
     }
 }

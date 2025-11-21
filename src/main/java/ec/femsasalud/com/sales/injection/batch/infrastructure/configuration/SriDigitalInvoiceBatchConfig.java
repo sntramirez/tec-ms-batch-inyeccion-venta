@@ -1,6 +1,6 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.configuration;
 
-import ec.femsasalud.com.sales.injection.batch.application.service.SriDigitalInvoiceService;
+import ec.femsasalud.com.sales.injection.batch.application.usecase.ProcessDigitalInvoiceUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -19,7 +19,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @RequiredArgsConstructor
 public class SriDigitalInvoiceBatchConfig {
 
-    private final SriDigitalInvoiceService sriDigitalInvoiceService;
+    private final ProcessDigitalInvoiceUseCase processDigitalInvoiceUseCase;
 
     @Bean
     public Job sriDigitalInvoiceJob(JobRepository jobRepository, Step sriDigitalInvoiceStep) {
@@ -40,7 +40,7 @@ public class SriDigitalInvoiceBatchConfig {
         return (contribution, chunkContext) -> {
             log.info("Ejecutando tasklet de procesamiento de facturas digitales SRI");
             try {
-                sriDigitalInvoiceService.processPendingInvoices();
+                processDigitalInvoiceUseCase.processPendingInvoices();
                 log.info("Tasklet ejecutado exitosamente");
                 return RepeatStatus.FINISHED;
             } catch (Exception e) {

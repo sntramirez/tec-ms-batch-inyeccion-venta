@@ -1,6 +1,9 @@
-package ec.femsasalud.com.sales.injection.batch.application.service;
+package ec.femsasalud.com.sales.injection.batch.application.usecase;
 
-import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.client.SriAutorizacionClient;
+import ec.femsasalud.com.sales.injection.batch.application.service.ParametrosService;
+import ec.femsasalud.com.sales.injection.batch.domain.service.DigitalInvoiceProcessorPort;
+import ec.femsasalud.com.sales.injection.batch.domain.service.FileStoragePort;
+import ec.femsasalud.com.sales.injection.batch.domain.service.SriAuthorizationPort;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.dto.sri.RespuestaAutorizacion;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.entity.FaColaFacturaDigitalEntity;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.repository.FaColaFacturaDigitalJpaRepository;
@@ -8,21 +11,27 @@ import ec.femsasalud.com.sales.injection.batch.shared.common.ParametroKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Caso de uso para procesar facturas digitales desde el SRI
+ */
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
-public class SriDigitalInvoiceService {
+public class ProcessDigitalInvoiceUseCase {
 
+    // Puertos
+    private final SriAuthorizationPort sriAuthorizationPort;
+    private final FileStoragePort fileStoragePort;
+    private final DigitalInvoiceProcessorPort invoiceProcessorPort;
+
+    // Repositorios
     private final FaColaFacturaDigitalJpaRepository colaFacturaRepository;
-    private final SriAutorizacionClient sriClient;
-    private final XmlFileStorageService fileStorageService;
-    private final DigitalInvoiceProcessorService invoiceProcessorService;
     private final ParametrosService parametrosService;
 
     @Value("${sri.wsdl.autorizacion.url:}")
@@ -34,11 +43,14 @@ public class SriDigitalInvoiceService {
     private static final String CODIGO_PROCESADO = "201";
     private static final String CODIGO_ERROR = "500";
 
+    /**
+     * Procesa todas las facturas digitales pendientes
+     */
     @Transactional
     public void processPendingInvoices() {
         log.info("Iniciando procesamiento de facturas digitales pendientes");
 
-        // Obtener parámetros del SRI (primero de BD, si no existe usa valor de properties)
+        // Obtener parámetros del SRI
         String wsdlUrl = parametrosService.getParametroOrDefault(ParametroKey.SRI_WSDL_AUTORIZACION_URL, defaultWsdlUrl);
         String ambiente = parametrosService.getParametroOrDefault(ParametroKey.SRI_AMBIENTE, defaultAmbiente);
 
@@ -77,13 +89,16 @@ public class SriDigitalInvoiceService {
         }
     }
 
+    /**
+     * Procesa una factura individual
+     */
     @Transactional
     public void processInvoice(FaColaFacturaDigitalEntity colaFactura, String wsdlUrl) {
         log.info("Procesando factura con clave de acceso: {}", colaFactura.getClaveAcceso());
 
         try {
-            // 1. Consultar autorización en el SRI
-            RespuestaAutorizacion respuesta = sriClient.consultarAutorizacion(wsdlUrl, colaFactura.getClaveAcceso());
+            // 1. Consultar autorización en el SRI (Puerto)
+            RespuestaAutorizacion respuesta = sriAuthorizationPort.consultarAutorizacion(wsdlUrl, colaFactura.getClaveAcceso());
 
             if (respuesta == null || respuesta.getAutorizaciones() == null ||
                     respuesta.getAutorizaciones().getAutorizacion().isEmpty()) {
@@ -98,21 +113,21 @@ public class SriDigitalInvoiceService {
                 throw new RuntimeException("Comprobante no autorizado. Estado: " + autorizacion.getEstado() + ". " + mensaje);
             }
 
-            // 3. Obtener XML autorizado
-            String xmlAutorizado = sriClient.obtenerXmlAutorizado(respuesta);
+            // 3. Obtener XML autorizado (Puerto)
+            String xmlAutorizado = sriAuthorizationPort.obtenerXmlAutorizado(respuesta);
             if (xmlAutorizado == null || xmlAutorizado.isEmpty()) {
                 throw new RuntimeException("No se pudo obtener el XML autorizado");
             }
 
-            // 4. Guardar XML en filesystem
-            String xmlFilePath = fileStorageService.saveXmlFile(
+            // 4. Guardar XML en filesystem (Puerto)
+            String xmlFilePath = fileStoragePort.saveXmlFile(
                     xmlAutorizado,
                     colaFactura.getClaveAcceso(),
                     colaFactura.getDocumentType()
             );
 
-            // 5. Procesar y guardar en tb_factura o TB_NOTA_CREDITO
-            invoiceProcessorService.processAndSaveInvoice(colaFactura, autorizacion, xmlFilePath);
+            // 5. Procesar y guardar en tb_factura o TB_NOTA_CREDITO (Puerto)
+            invoiceProcessorPort.processAndSaveInvoice(colaFactura, autorizacion, xmlFilePath);
 
             // 6. Actualizar estado en FA_COLA_FACTURA_DIGITAL
             markAsProcessed(colaFactura, autorizacion.getNumeroAutorizacion());

@@ -1,6 +1,7 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.client;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import ec.femsasalud.com.sales.injection.batch.domain.service.SriAuthorizationPort;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.dto.sri.RespuestaAutorizacion;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,7 @@ import java.time.Duration;
 
 @Slf4j
 @Component
-public class SriAutorizacionClient {
+public class SriAutorizacionClient implements SriAuthorizationPort {
 
     private final WebClient webClient;
     private final XmlMapper xmlMapper;

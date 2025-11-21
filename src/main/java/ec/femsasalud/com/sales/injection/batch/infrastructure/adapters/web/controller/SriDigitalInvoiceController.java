@@ -1,6 +1,6 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.web.controller;
 
-import ec.femsasalud.com.sales.injection.batch.application.service.SriDigitalInvoiceService;
+import ec.femsasalud.com.sales.injection.batch.application.usecase.ProcessDigitalInvoiceUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -20,7 +20,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SriDigitalInvoiceController {
 
-    private final SriDigitalInvoiceService sriDigitalInvoiceService;
+    private final ProcessDigitalInvoiceUseCase processDigitalInvoiceUseCase;
     private final JobLauncher jobLauncher;
     private final Job sriDigitalInvoiceJob;
 
@@ -35,7 +35,7 @@ public class SriDigitalInvoiceController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            sriDigitalInvoiceService.processPendingInvoices();
+            processDigitalInvoiceUseCase.processPendingInvoices();
 
             response.put("status", "success");
             response.put("message", "Procesamiento de facturas digitales completado exitosamente");

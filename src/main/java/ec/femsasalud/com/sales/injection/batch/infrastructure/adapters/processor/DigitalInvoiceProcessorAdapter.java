@@ -1,6 +1,7 @@
-package ec.femsasalud.com.sales.injection.batch.application.service;
+package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.processor;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import ec.femsasalud.com.sales.injection.batch.domain.service.DigitalInvoiceProcessorPort;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.external.dto.sri.RespuestaAutorizacion;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.ginvoice.persistence.entity.TbFactura;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.ginvoice.persistence.entity.TbNotaCredito;
@@ -9,7 +10,7 @@ import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.ginvoice.
 import ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.prod.persistence.entity.FaColaFacturaDigitalEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -24,13 +25,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
-public class DigitalInvoiceProcessorService {
+public class DigitalInvoiceProcessorAdapter implements DigitalInvoiceProcessorPort {
 
     private final TbFacturasJpaRepository facturasRepository;
     private final TbNotaCreditoJpaRepository notaCreditoRepository;
 
+    @Override
     @Transactional
     public void processAndSaveInvoice(FaColaFacturaDigitalEntity colaFactura,
                                       RespuestaAutorizacion.Autorizacion autorizacion,
