@@ -32,7 +32,8 @@ public enum ParametroKey {
     // Parámetros SRI
     SRI_WSDL_AUTORIZACION_URL("sri_wsdl_autorizacion_url"),
     SRI_AMBIENTE("sri_ambiente"),
-    SRI_XML_STORAGE_PATH("sri_xml_storage_path");
+    SRI_XML_STORAGE_PATH("sri_xml_storage_path"),
+    SRI_SCHEDULER_CRON("sri_scheduler_cron");
 
     private final String clave;
 
