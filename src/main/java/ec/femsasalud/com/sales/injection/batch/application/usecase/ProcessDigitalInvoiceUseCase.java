@@ -146,12 +146,13 @@ public class ProcessDigitalInvoiceUseCase {
     }
 
     private void markAsError(FaColaFacturaDigitalEntity colaFactura, String errorMessage) {
-        // Mantener CODIGO en 200 y MENSAJE sin cambios
-        // Solo actualizar error, fecha y usuario
-        colaFactura.setError("ERROR");
-        colaFactura.setFechaActualiza(new Date());
-        colaFactura.setUsuarioActualiza("SRI_BATCH");
-        colaFacturaRepository.save(colaFactura);
+        // NO actualizar ningún campo de FA_COLA_FACTURA_DIGITAL cuando hay error
+        // Mantener todos los valores originales: CODIGO, MENSAJE, ERROR, etc.
+        // Solo registrar el error en los logs
+        log.error("Factura no procesada - Clave de acceso: {} - Error: {}",
+            colaFactura.getClaveAcceso(), errorMessage);
+
+        // El registro se mantiene tal cual está en la tabla para ser reprocesado después
     }
 
     private String buildErrorMessage(RespuestaAutorizacion.Autorizacion autorizacion) {
