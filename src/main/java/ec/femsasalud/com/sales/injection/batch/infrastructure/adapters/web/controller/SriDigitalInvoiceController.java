@@ -1,5 +1,6 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.web.controller;
 
+import ec.femsasalud.com.sales.injection.batch.application.usecase.ProcessDigitalInvoiceUseCase;
 import ec.femsasalud.com.sales.injection.batch.infrastructure.scheduler.SriDigitalInvoiceScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import java.util.Map;
 public class SriDigitalInvoiceController {
 
     private final SriDigitalInvoiceScheduler scheduler;
+    private final ProcessDigitalInvoiceUseCase processDigitalInvoiceUseCase;
 
     /**
      * Endpoint para ejecutar manualmente el proceso de consulta al SRI
@@ -62,5 +64,39 @@ public class SriDigitalInvoiceController {
         response.put("service", "SRI Digital Invoice Service");
         response.put("timestamp", System.currentTimeMillis());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Endpoint para resetear errores SRI y número de intentos.
+     * Se debe ejecutar cuando el SRI vuelva a estar disponible después de mantenimiento.
+     * Esto permite que las facturas con error "SRI" sean reprocesadas.
+     */
+    @PostMapping("/reset-sri-errors")
+    public ResponseEntity<Map<String, Object>> resetSriErrors() {
+        log.info("Solicitud de reseteo de errores SRI recibida");
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            int resetCount = processDigitalInvoiceUseCase.resetSriErrors();
+
+            response.put("status", "success");
+            response.put("message", "Errores SRI reseteados exitosamente");
+            response.put("facturasReseteadas", resetCount);
+            response.put("timestamp", System.currentTimeMillis());
+
+            log.info("Se resetearon {} facturas con error SRI", resetCount);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error al resetear errores SRI", e);
+
+            response.put("status", "error");
+            response.put("message", "Error al resetear errores SRI: " + e.getMessage());
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }

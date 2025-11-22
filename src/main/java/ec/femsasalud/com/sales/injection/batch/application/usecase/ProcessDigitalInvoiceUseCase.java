@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -142,17 +143,32 @@ public class ProcessDigitalInvoiceUseCase {
         // Solo actualizar fecha y usuario
         colaFactura.setFechaActualiza(new Date());
         colaFactura.setUsuarioActualiza("SRI_BATCH");
+
+        // Resetear error e intentos al procesar exitosamente
+        colaFactura.setError(null);
+        colaFactura.setIntentos(BigDecimal.ZERO);
+
         colaFacturaRepository.save(colaFactura);
     }
 
     private void markAsError(FaColaFacturaDigitalEntity colaFactura, String errorMessage) {
-        // NO actualizar ningún campo de FA_COLA_FACTURA_DIGITAL cuando hay error
-        // Mantener todos los valores originales: CODIGO, MENSAJE, ERROR, etc.
-        // Solo registrar el error en los logs
-        log.error("Factura no procesada - Clave de acceso: {} - Error: {}",
-            colaFactura.getClaveAcceso(), errorMessage);
+        // Incrementar contador de intentos
+        BigDecimal intentosActuales = colaFactura.getIntentos() != null ? colaFactura.getIntentos() : BigDecimal.ZERO;
+        BigDecimal nuevosIntentos = intentosActuales.add(BigDecimal.ONE);
 
-        // El registro se mantiene tal cual está en la tabla para ser reprocesado después
+        colaFactura.setIntentos(nuevosIntentos);
+
+        // Si ya llegó a 3 intentos, marcar con error "SRI"
+        if (nuevosIntentos.compareTo(BigDecimal.valueOf(3)) >= 0) {
+            colaFactura.setError("SRI");
+            log.error("Factura con 3 intentos fallidos - Clave de acceso: {} - Marcada con error SRI - Error: {}",
+                colaFactura.getClaveAcceso(), errorMessage);
+        } else {
+            log.warn("Factura no procesada (Intento {}/3) - Clave de acceso: {} - Error: {}",
+                nuevosIntentos, colaFactura.getClaveAcceso(), errorMessage);
+        }
+
+        colaFacturaRepository.save(colaFactura);
     }
 
     private String buildErrorMessage(RespuestaAutorizacion.Autorizacion autorizacion) {
@@ -171,6 +187,39 @@ public class ProcessDigitalInvoiceUseCase {
         if (value == null || value.trim().isEmpty()) {
             log.error("Parámetro requerido no configurado: {}", parameterName);
             throw new IllegalStateException(errorMessage + " (parámetro: " + parameterName + ")");
+        }
+    }
+
+    /**
+     * Resetea los errores SRI y número de intentos para reprocesar las facturas
+     * Este método se debe ejecutar cuando el SRI vuelva a estar disponible después de mantenimiento
+     */
+    @Transactional
+    public int resetSriErrors() {
+        log.info("Iniciando reseteo de errores SRI");
+
+        try {
+            // Obtener facturas con error SRI
+            List<FaColaFacturaDigitalEntity> invoicesWithError = colaFacturaRepository.findInvoicesWithSriError();
+            log.info("Se encontraron {} facturas con error SRI para resetear", invoicesWithError.size());
+
+            // Resetear error e intentos
+            for (FaColaFacturaDigitalEntity invoice : invoicesWithError) {
+                invoice.setError(null);
+                invoice.setIntentos(BigDecimal.ZERO);
+                log.info("Reseteando error SRI para factura: {}", invoice.getClaveAcceso());
+            }
+
+            // Guardar todos los cambios
+            colaFacturaRepository.saveAll(invoicesWithError);
+
+            log.info("Reseteo de errores SRI completado. {} facturas serán reprocesadas", invoicesWithError.size());
+
+            return invoicesWithError.size();
+
+        } catch (Exception e) {
+            log.error("Error al resetear errores SRI", e);
+            throw new RuntimeException("Error al resetear errores SRI", e);
         }
     }
 }

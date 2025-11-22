@@ -23,7 +23,17 @@ public class ColaFacturaDigitalRepositoryAdapter implements ColaFacturaDigitalRe
     }
 
     @Override
+    public List<FaColaFacturaDigitalEntity> findInvoicesWithSriError() {
+        return jpaRepository.findInvoicesWithSriError();
+    }
+
+    @Override
     public FaColaFacturaDigitalEntity save(FaColaFacturaDigitalEntity entity) {
         return jpaRepository.save(entity);
+    }
+
+    @Override
+    public List<FaColaFacturaDigitalEntity> saveAll(List<FaColaFacturaDigitalEntity> entities) {
+        return jpaRepository.saveAll(entities);
     }
 }
