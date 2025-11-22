@@ -40,9 +40,6 @@ public class ProcessDigitalInvoiceUseCase {
     @Value("${sri.ambiente:}")
     private String defaultAmbiente;
 
-    private static final String CODIGO_PROCESADO = "201";
-    private static final String CODIGO_ERROR = "500";
-
     /**
      * Procesa todas las facturas digitales pendientes
      */
@@ -141,18 +138,17 @@ public class ProcessDigitalInvoiceUseCase {
     }
 
     private void markAsProcessed(FaColaFacturaDigitalEntity colaFactura, String numeroAutorizacion) {
-        colaFactura.setCodigo(CODIGO_PROCESADO);
-        colaFactura.setMensaje("Procesado exitosamente. Autorización: " + numeroAutorizacion);
+        // Mantener CODIGO en 200 y MENSAJE sin cambios
+        // Solo actualizar fecha y usuario
         colaFactura.setFechaActualiza(new Date());
         colaFactura.setUsuarioActualiza("SRI_BATCH");
         colaFacturaRepository.save(colaFactura);
     }
 
     private void markAsError(FaColaFacturaDigitalEntity colaFactura, String errorMessage) {
-        colaFactura.setCodigo(CODIGO_ERROR);
+        // Mantener CODIGO en 200 y MENSAJE sin cambios
+        // Solo actualizar error, fecha y usuario
         colaFactura.setError("ERROR");
-        colaFactura.setMensaje(errorMessage != null && errorMessage.length() > 500 ?
-                errorMessage.substring(0, 500) : errorMessage);
         colaFactura.setFechaActualiza(new Date());
         colaFactura.setUsuarioActualiza("SRI_BATCH");
         colaFacturaRepository.save(colaFactura);
