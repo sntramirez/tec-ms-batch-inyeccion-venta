@@ -56,8 +56,9 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             RespuestaAutorizacion respuesta;
             try {
                 respuesta = xmlMapper.readValue(xmlResponse, RespuestaAutorizacion.class);
-                // Guardar el XML completo del SRI decodificando HTML entities pero manteniendo CDATA
-                respuesta.setXmlCompleto(HtmlUtils.htmlUnescape(xmlResponse));
+                // Extraer y guardar solo el tag <autorizacion> completo con HTML entities decodificadas
+                String autorizacionXml = extractAutorizacionXml(xmlResponse);
+                respuesta.setXmlCompleto(autorizacionXml);
             } catch (com.fasterxml.jackson.databind.JsonMappingException jme) {
                 log.error("Error al parsear XML. XML recibido: {}", xmlResponse);
                 log.error("Error de mapeo JSON/XML: {}", jme.getMessage(), jme);
@@ -120,6 +121,38 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
 
         log.warn("No se pudo extraer el XML de la respuesta SOAP");
         return soapResponse;
+    }
+
+    /**
+     * Extrae el primer tag <autorizacion> completo del XML y decodifica HTML entities
+     */
+    private String extractAutorizacionXml(String xmlResponse) {
+        try {
+            // Buscar el inicio del primer tag <autorizacion>
+            int startIndex = xmlResponse.indexOf("<autorizacion>");
+            if (startIndex == -1) {
+                log.warn("No se encontró tag <autorizacion> en el XML");
+                return xmlResponse; // Retornar todo si no se encuentra
+            }
+
+            // Buscar el cierre del tag </autorizacion>
+            int endIndex = xmlResponse.indexOf("</autorizacion>", startIndex);
+            if (endIndex == -1) {
+                log.warn("No se encontró tag de cierre </autorizacion> en el XML");
+                return xmlResponse;
+            }
+
+            // Extraer el contenido completo del tag autorizacion
+            endIndex += "</autorizacion>".length();
+            String autorizacionXml = xmlResponse.substring(startIndex, endIndex);
+
+            // Decodificar HTML entities manteniendo estructura CDATA
+            return HtmlUtils.htmlUnescape(autorizacionXml);
+
+        } catch (Exception e) {
+            log.error("Error al extraer tag <autorizacion>: {}", e.getMessage());
+            return HtmlUtils.htmlUnescape(xmlResponse); // Retornar todo decodificado en caso de error
+        }
     }
 
     public String obtenerXmlAutorizado(RespuestaAutorizacion respuesta) {
