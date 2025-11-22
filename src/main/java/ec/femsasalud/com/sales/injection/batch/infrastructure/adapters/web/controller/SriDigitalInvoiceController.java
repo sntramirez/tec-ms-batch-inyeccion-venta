@@ -1,6 +1,6 @@
 package ec.femsasalud.com.sales.injection.batch.infrastructure.adapters.web.controller;
 
-import ec.femsasalud.com.sales.injection.batch.application.usecase.ProcessDigitalInvoiceUseCase;
+import ec.femsasalud.com.sales.injection.batch.infrastructure.scheduler.SriDigitalInvoiceScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,11 +16,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SriDigitalInvoiceController {
 
-    private final ProcessDigitalInvoiceUseCase processDigitalInvoiceUseCase;
+    private final SriDigitalInvoiceScheduler scheduler;
 
     /**
      * Endpoint para ejecutar manualmente el proceso de consulta al SRI
-     * y procesamiento de facturas digitales pendientes
+     * y procesamiento de facturas digitales pendientes.
+     *
+     * Usa el mismo mecanismo del scheduler para evitar ejecuciones concurrentes.
+     * Si ya hay un procesamiento en curso, se rechazará la solicitud.
      */
     @PostMapping("/process")
     public ResponseEntity<Map<String, Object>> processDigitalInvoices() {
@@ -29,7 +32,8 @@ public class SriDigitalInvoiceController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            processDigitalInvoiceUseCase.processPendingInvoices();
+            // Ejecutar usando el scheduler que tiene control de concurrencia
+            scheduler.runSriDigitalInvoiceJob();
 
             response.put("status", "success");
             response.put("message", "Procesamiento de facturas digitales completado exitosamente");

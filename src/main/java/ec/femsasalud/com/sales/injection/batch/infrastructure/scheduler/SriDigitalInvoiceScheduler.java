@@ -11,7 +11,10 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.support.CronTrigger;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Configuration
@@ -24,6 +27,7 @@ public class SriDigitalInvoiceScheduler {
     private final TaskScheduler taskScheduler;
 
     private ScheduledFuture<?> scheduledTask;
+    private final AtomicBoolean isProcessing = new AtomicBoolean(false);
     private static final String DEFAULT_CRON = "0 */30 * * * *"; // Cada 30 minutos por defecto
 
     /**
@@ -77,17 +81,48 @@ public class SriDigitalInvoiceScheduler {
      * Ejecuta el procesamiento de facturas digitales
      * La frecuencia se configura desde la tabla FA_PARAMETROS_FACTURADOR
      * con la clave 'sri_scheduler_cron'
+     *
+     * Incluye protección contra ejecuciones concurrentes:
+     * Si el procesamiento anterior aún no termina, se salta la ejecución
      */
     public void runSriDigitalInvoiceJob() {
+        // Verificar si ya hay un procesamiento en curso
+        if (!isProcessing.compareAndSet(false, true)) {
+            log.warn("=== PROCESAMIENTO SALTADO ===");
+            log.warn("Ya existe una ejecución en curso del procesamiento de facturas digitales SRI");
+            log.warn("Se omite esta ejecución programada para evitar sobrecarga");
+            log.warn("Considere ajustar el cron expression en FA_PARAMETROS_FACTURADOR (sri_scheduler_cron)");
+            return;
+        }
+
+        Instant startTime = Instant.now();
+
         try {
-            log.info("Iniciando ejecución programada del procesamiento de facturas digitales SRI");
+            log.info("=== INICIANDO PROCESAMIENTO DE FACTURAS DIGITALES SRI ===");
+            log.info("Hora de inicio: {}", startTime);
 
             processDigitalInvoiceUseCase.processPendingInvoices();
 
-            log.info("Procesamiento de facturas digitales SRI ejecutado exitosamente");
+            Instant endTime = Instant.now();
+            Duration duration = Duration.between(startTime, endTime);
+
+            log.info("=== PROCESAMIENTO COMPLETADO EXITOSAMENTE ===");
+            log.info("Tiempo total de ejecución: {} minutos {} segundos",
+                duration.toMinutes(), duration.toSecondsPart());
 
         } catch (Exception e) {
+            Instant endTime = Instant.now();
+            Duration duration = Duration.between(startTime, endTime);
+
+            log.error("=== ERROR EN PROCESAMIENTO ===");
+            log.error("Tiempo transcurrido antes del error: {} minutos {} segundos",
+                duration.toMinutes(), duration.toSecondsPart());
             log.error("Error al ejecutar el procesamiento programado de facturas digitales SRI", e);
+
+        } finally {
+            // IMPORTANTE: Siempre liberar el flag, incluso si hay error
+            isProcessing.set(false);
+            log.info("Flag de procesamiento liberado. Listo para próxima ejecución.");
         }
     }
 }
