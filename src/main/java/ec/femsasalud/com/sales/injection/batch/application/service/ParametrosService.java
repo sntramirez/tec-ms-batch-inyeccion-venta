@@ -6,7 +6,6 @@ import ec.femsasalud.com.sales.injection.batch.shared.common.ParametroKey;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -24,6 +23,11 @@ public class ParametrosService {
     private final Map<String, String> parametrosCache = new ConcurrentHashMap<>();
     private volatile boolean cacheInitialized = false;
 
+    /**
+     * Carga todos los parámetros al iniciar la aplicación.
+     * Los parámetros se mantienen en memoria durante toda la vida del pod.
+     * Si se necesitan cambios, reiniciar el pod para recargar los parámetros.
+     */
     @PostConstruct
     public void initializeCache() {
         loadAllParameters();
@@ -39,7 +43,7 @@ public class ParametrosService {
             parametros.forEach(param -> parametrosCache.put(param.clave(), param.valor()));
 
             cacheInitialized = true;
-            log.info("Cache de parámetros inicializado con {} elementos", parametros.size());
+            log.info("Cache de parámetros inicializado con {} elementos. Para aplicar cambios reinicie el pod.", parametros.size());
 
         } catch (Exception e) {
             log.error("Error al inicializar cache de parámetros", e);
@@ -89,12 +93,10 @@ public class ParametrosService {
         return null;
     }
 
-    @Scheduled(fixedDelay = 300000) // 5 minutos
-    public void refreshCache() {
-        log.debug("Refrescando cache de parámetros");
-        loadAllParameters();
-    }
-
+    /**
+     * Limpia el cache de parámetros.
+     * Útil para testing o casos especiales donde se necesite recargar manualmente.
+     */
     public void clearCache() {
         parametrosCache.clear();
         cacheInitialized = false;
