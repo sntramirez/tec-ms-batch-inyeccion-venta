@@ -124,7 +124,8 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
     }
 
     /**
-     * Extrae el primer tag <autorizacion> completo del XML y decodifica HTML entities
+     * Extrae el primer tag <autorizacion> completo del XML, decodifica HTML entities
+     * y formatea con declaración XML y CDATA en el tag comprobante
      */
     private String extractAutorizacionXml(String xmlResponse) {
         try {
@@ -132,7 +133,7 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             int startIndex = xmlResponse.indexOf("<autorizacion>");
             if (startIndex == -1) {
                 log.warn("No se encontró tag <autorizacion> en el XML");
-                return xmlResponse; // Retornar todo si no se encuentra
+                return xmlResponse;
             }
 
             // Buscar el cierre del tag </autorizacion>
@@ -146,12 +147,59 @@ public class SriAutorizacionClient implements SriAuthorizationPort {
             endIndex += "</autorizacion>".length();
             String autorizacionXml = xmlResponse.substring(startIndex, endIndex);
 
-            // Decodificar HTML entities manteniendo estructura CDATA
-            return HtmlUtils.htmlUnescape(autorizacionXml);
+            // Decodificar HTML entities
+            String decodedXml = HtmlUtils.htmlUnescape(autorizacionXml);
+
+            // Envolver el contenido del tag <comprobante> en CDATA
+            String xmlWithCdata = wrapComprobanteInCdata(decodedXml);
+
+            // Agregar declaración XML al inicio
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + xmlWithCdata;
 
         } catch (Exception e) {
             log.error("Error al extraer tag <autorizacion>: {}", e.getMessage());
-            return HtmlUtils.htmlUnescape(xmlResponse); // Retornar todo decodificado en caso de error
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + HtmlUtils.htmlUnescape(xmlResponse);
+        }
+    }
+
+    /**
+     * Envuelve el contenido del tag <comprobante> en CDATA
+     */
+    private String wrapComprobanteInCdata(String xml) {
+        try {
+            // Buscar el tag <comprobante>
+            int comprobanteStart = xml.indexOf("<comprobante>");
+            if (comprobanteStart == -1) {
+                return xml; // No hay tag comprobante, retornar tal cual
+            }
+
+            int comprobanteEnd = xml.indexOf("</comprobante>", comprobanteStart);
+            if (comprobanteEnd == -1) {
+                return xml; // No se encontró cierre, retornar tal cual
+            }
+
+            // Extraer el contenido entre <comprobante> y </comprobante>
+            int contentStart = comprobanteStart + "<comprobante>".length();
+            String comprobanteContent = xml.substring(contentStart, comprobanteEnd);
+
+            // Si ya tiene CDATA, no hacer nada
+            if (comprobanteContent.trim().startsWith("<![CDATA[")) {
+                return xml;
+            }
+
+            // Construir el XML con CDATA
+            StringBuilder result = new StringBuilder();
+            result.append(xml, 0, contentStart); // Todo antes del contenido del comprobante
+            result.append("<![CDATA["); // Inicio CDATA
+            result.append(comprobanteContent); // Contenido del comprobante
+            result.append("]]>"); // Fin CDATA
+            result.append(xml.substring(comprobanteEnd)); // </comprobante> y resto del XML
+
+            return result.toString();
+
+        } catch (Exception e) {
+            log.error("Error al envolver comprobante en CDATA: {}", e.getMessage());
+            return xml; // Retornar sin cambios en caso de error
         }
     }
 
