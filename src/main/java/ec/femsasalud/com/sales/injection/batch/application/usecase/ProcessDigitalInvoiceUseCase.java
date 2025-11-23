@@ -15,8 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Caso de uso para procesar facturas digitales desde el SRI
@@ -189,6 +188,44 @@ public class ProcessDigitalInvoiceUseCase {
             log.error("Parámetro requerido no configurado: {}", parameterName);
             throw new IllegalStateException(errorMessage + " (parámetro: " + parameterName + ")");
         }
+    }
+
+    /**
+     * Método de debug para consultar el estado de un documento por clave de acceso
+     * Verifica en FA_COLA_FACTURA_DIGITAL y en las tablas de destino
+     */
+    public Map<String, Object> debugDocument(String claveAcceso) {
+        Map<String, Object> debug = new HashMap<>();
+
+        try {
+            // Buscar en FA_COLA_FACTURA_DIGITAL
+            List<FaColaFacturaDigitalEntity> cola = colaFacturaRepository.findPendingDigitalInvoices()
+                .stream()
+                .filter(f -> claveAcceso.equals(f.getClaveAcceso()))
+                .toList();
+
+            if (!cola.isEmpty()) {
+                FaColaFacturaDigitalEntity item = cola.get(0);
+                debug.put("enCola", true);
+                debug.put("documentType", item.getDocumentType());
+                debug.put("codigo", item.getCodigo());
+                debug.put("error", item.getError());
+                debug.put("intentos", item.getIntentos());
+                debug.put("usuarioActualiza", item.getUsuarioActualiza());
+                debug.put("mensaje", "Documento encontrado en FA_COLA_FACTURA_DIGITAL");
+            } else {
+                debug.put("enCola", false);
+                debug.put("mensaje", "Documento NO encontrado en FA_COLA_FACTURA_DIGITAL o ya fue procesado");
+            }
+
+            debug.put("claveAcceso", claveAcceso);
+
+        } catch (Exception e) {
+            log.error("Error al consultar documento en debug", e);
+            debug.put("error", e.getMessage());
+        }
+
+        return debug;
     }
 
     /**

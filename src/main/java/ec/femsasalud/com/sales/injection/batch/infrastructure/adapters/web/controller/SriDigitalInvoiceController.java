@@ -67,6 +67,36 @@ public class SriDigitalInvoiceController {
     }
 
     /**
+     * Endpoint para consultar el estado de un documento por clave de acceso.
+     * Útil para debugging y verificar en qué tabla se guardó el documento.
+     */
+    @GetMapping("/debug/{claveAcceso}")
+    public ResponseEntity<Map<String, Object>> debugDocument(@PathVariable String claveAcceso) {
+        log.info("Solicitud de debug para clave de acceso: {}", claveAcceso);
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> debug = processDigitalInvoiceUseCase.debugDocument(claveAcceso);
+
+            response.put("status", "success");
+            response.putAll(debug);
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error al consultar documento", e);
+
+            response.put("status", "error");
+            response.put("message", "Error al consultar documento: " + e.getMessage());
+            response.put("timestamp", System.currentTimeMillis());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
      * Endpoint para resetear errores SRI y número de intentos.
      * Se debe ejecutar cuando el SRI vuelva a estar disponible después de mantenimiento.
      * Esto permite que las facturas con error "S" (SRI) sean reprocesadas.
