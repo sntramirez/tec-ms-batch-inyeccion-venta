@@ -145,7 +145,8 @@ public class ProcessDigitalInvoiceUseCase {
         colaFactura.setUsuarioActualiza("SRI_BATCH");
 
         // Resetear error e intentos al procesar exitosamente
-        colaFactura.setError(null);
+        // ERROR = '1' indica que no hay error (estado OK)
+        colaFactura.setError("1");
         colaFactura.setIntentos(BigDecimal.ZERO);
 
         colaFacturaRepository.save(colaFactura);
@@ -204,8 +205,9 @@ public class ProcessDigitalInvoiceUseCase {
             log.info("Se encontraron {} facturas con error SRI para resetear", invoicesWithError.size());
 
             // Resetear error e intentos
+            // ERROR = '1' indica que no hay error (estado OK)
             for (FaColaFacturaDigitalEntity invoice : invoicesWithError) {
-                invoice.setError(null);
+                invoice.setError("1");
                 invoice.setIntentos(BigDecimal.ZERO);
                 log.info("Reseteando error SRI para factura: {}", invoice.getClaveAcceso());
             }
