@@ -53,21 +53,32 @@ public class DigitalInvoiceProcessorAdapter implements DigitalInvoiceProcessorPo
         try {
             log.info("Procesando factura con clave de acceso: {}", colaFactura.getClaveAcceso());
 
+            // Log del comprobante para debugging
+            String comprobante = autorizacion.getComprobante();
+            log.debug("Comprobante XML length: {} caracteres", comprobante != null ? comprobante.length() : 0);
+            if (comprobante == null || comprobante.trim().isEmpty()) {
+                throw new IllegalStateException("El comprobante del SRI está vacío para clave: " + colaFactura.getClaveAcceso());
+            }
+            log.debug("Primeros 200 caracteres del comprobante: {}", comprobante.substring(0, Math.min(200, comprobante.length())));
+
             // Verificar si ya existe
             TbFactura existente = facturasRepository.findByClaveAcceso(colaFactura.getClaveAcceso());
             if (existente != null) {
                 log.warn("La factura con clave de acceso {} ya existe. Actualizando...", colaFactura.getClaveAcceso());
                 updateFacturaFromAutorizacion(existente, autorizacion, xmlFilePath);
                 facturasRepository.save(existente);
+                log.info("Factura actualizada exitosamente con ID: {}", existente.getId());
             } else {
                 TbFactura factura = buildFacturaFromAutorizacion(colaFactura, autorizacion, xmlFilePath);
-                facturasRepository.save(factura);
-                log.info("Factura guardada exitosamente con ID: {}", factura.getId());
+                log.debug("Factura construida, guardando en base de datos...");
+                TbFactura saved = facturasRepository.save(factura);
+                log.info("Factura guardada exitosamente con ID: {}, clave: {}", saved.getId(), saved.getClaveAcceso());
             }
 
         } catch (Exception e) {
             log.error("Error al procesar factura con clave de acceso: {}", colaFactura.getClaveAcceso(), e);
-            throw new RuntimeException("Error al procesar factura", e);
+            log.error("Detalles del error: {}", e.getMessage());
+            throw new RuntimeException("Error al procesar factura: " + e.getMessage(), e);
         }
     }
 
@@ -77,21 +88,32 @@ public class DigitalInvoiceProcessorAdapter implements DigitalInvoiceProcessorPo
         try {
             log.info("Procesando nota de crédito con clave de acceso: {}", colaFactura.getClaveAcceso());
 
+            // Log del comprobante para debugging
+            String comprobante = autorizacion.getComprobante();
+            log.debug("Comprobante XML length: {} caracteres", comprobante != null ? comprobante.length() : 0);
+            if (comprobante == null || comprobante.trim().isEmpty()) {
+                throw new IllegalStateException("El comprobante del SRI está vacío para clave: " + colaFactura.getClaveAcceso());
+            }
+            log.debug("Primeros 200 caracteres del comprobante: {}", comprobante.substring(0, Math.min(200, comprobante.length())));
+
             // Verificar si ya existe
             TbNotaCredito existente = notaCreditoRepository.findByClaveAcceso(colaFactura.getClaveAcceso());
             if (existente != null) {
                 log.warn("La nota de crédito con clave de acceso {} ya existe. Actualizando...", colaFactura.getClaveAcceso());
                 updateNotaCreditoFromAutorizacion(existente, autorizacion, xmlFilePath);
                 notaCreditoRepository.save(existente);
+                log.info("Nota de crédito actualizada exitosamente con ID: {}", existente.getId());
             } else {
                 TbNotaCredito notaCredito = buildNotaCreditoFromAutorizacion(colaFactura, autorizacion, xmlFilePath);
-                notaCreditoRepository.save(notaCredito);
-                log.info("Nota de crédito guardada exitosamente con ID: {}", notaCredito.getId());
+                log.debug("Nota de crédito construida, guardando en base de datos...");
+                TbNotaCredito saved = notaCreditoRepository.save(notaCredito);
+                log.info("Nota de crédito guardada exitosamente con ID: {}, clave: {}", saved.getId(), saved.getClaveAcceso());
             }
 
         } catch (Exception e) {
             log.error("Error al procesar nota de crédito con clave de acceso: {}", colaFactura.getClaveAcceso(), e);
-            throw new RuntimeException("Error al procesar nota de crédito", e);
+            log.error("Detalles del error: {}", e.getMessage());
+            throw new RuntimeException("Error al procesar nota de crédito: " + e.getMessage(), e);
         }
     }
 
@@ -242,10 +264,19 @@ public class DigitalInvoiceProcessorAdapter implements DigitalInvoiceProcessorPo
     }
 
     private Document parseXml(String xmlContent) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(false);
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new ByteArrayInputStream(xmlContent.getBytes("UTF-8")));
+        try {
+            log.debug("Parseando XML con longitud: {} caracteres", xmlContent.length());
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(false);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new ByteArrayInputStream(xmlContent.getBytes("UTF-8")));
+            log.debug("XML parseado exitosamente. Root element: {}", doc.getDocumentElement().getNodeName());
+            return doc;
+        } catch (Exception e) {
+            log.error("Error al parsear XML. Primeros 500 caracteres: {}",
+                xmlContent.substring(0, Math.min(500, xmlContent.length())));
+            throw e;
+        }
     }
 
     private Element getFirstElement(Element parent, String tagName) {
