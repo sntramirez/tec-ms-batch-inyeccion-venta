@@ -69,7 +69,7 @@ public class SriDigitalInvoiceController {
     /**
      * Endpoint para resetear errores SRI y número de intentos.
      * Se debe ejecutar cuando el SRI vuelva a estar disponible después de mantenimiento.
-     * Esto permite que las facturas con error "SRI" sean reprocesadas.
+     * Esto permite que las facturas con error "S" (SRI) sean reprocesadas.
      */
     @PostMapping("/reset-sri-errors")
     public ResponseEntity<Map<String, Object>> resetSriErrors() {

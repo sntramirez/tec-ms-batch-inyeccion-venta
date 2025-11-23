@@ -158,10 +158,10 @@ public class ProcessDigitalInvoiceUseCase {
 
         colaFactura.setIntentos(nuevosIntentos);
 
-        // Si ya llegó a 3 intentos, marcar con error "SRI"
+        // Si ya llegó a 3 intentos, marcar con error "S" (SRI)
         if (nuevosIntentos.compareTo(BigDecimal.valueOf(3)) >= 0) {
-            colaFactura.setError("SRI");
-            log.error("Factura con 3 intentos fallidos - Clave de acceso: {} - Marcada con error SRI - Error: {}",
+            colaFactura.setError("S");
+            log.error("Factura con 3 intentos fallidos - Clave de acceso: {} - Marcada con error S - Error: {}",
                 colaFactura.getClaveAcceso(), errorMessage);
         } else {
             log.warn("Factura no procesada (Intento {}/3) - Clave de acceso: {} - Error: {}",

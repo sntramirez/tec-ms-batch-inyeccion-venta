@@ -11,13 +11,13 @@ public interface ColaFacturaDigitalRepository {
 
     /**
      * Encuentra facturas digitales pendientes de procesar
-     * Excluye facturas con error 'SRI' y 3 o más intentos
+     * Excluye facturas con error 'S' (SRI) y 3 o más intentos
      * @return Lista de facturas con CODIGO=200 y CLAVE_ACCESO not null
      */
     List<FaColaFacturaDigitalEntity> findPendingDigitalInvoices();
 
     /**
-     * Encuentra facturas con error SRI y 3 o más intentos
+     * Encuentra facturas con error 'S' (SRI) y 3 o más intentos
      * @return Lista de facturas con error SRI
      */
     List<FaColaFacturaDigitalEntity> findInvoicesWithSriError();
